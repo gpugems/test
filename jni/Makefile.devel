@@ -1,0 +1,228 @@
+#!/usr/bin/make
+
+# helpful advice from
+# http://warpedtimes.wordpress.com/2010/02/03/building-open-source-libraries-with-android-ndk/
+# much appreciated!
+
+# packages left:
+# gtk+-3 --disable-x11-backend --disable-win32-backend --disable-quartz-backend
+# atk
+# gdk-pixbuf
+# introspection
+# XX build gtk-update-icon-cache? or don't define REBUILD_PNGS?
+# XX need pdf backend for cario?
+
+# change this to point to your NDK
+NDK=$(HOME)/3rdParty/android-ndk-r5b
+TOOLCHAIN=$(NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
+PLATFORM=$(NDK)/platforms/android-9
+CWD=$(shell pwd)
+SYSROOT=$(CWD)/sysroot
+# -isystem $(PLATFORM)/arch-arm/usr/include -L$(PLATFORM)/arch-arm/usr/lib -Wl,-rpath-link=$(PLATFORM)/arch-arm/usr/lib 
+HOST=arm-linux-androideabi
+# use -mfpu=vfp to disable NEON
+HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  -Wno-psabi -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack
+HOSTCC=$(HOST)-gcc $(HOSTCFLAGS) -fstack-protector
+# add harmless suffix to HOSTCXX definition to fix libtool breakage
+HOSTCXX=$(HOST)-g++ $(HOSTCFLAGS) -DFOOFOOFOO
+HOSTLDFLAGS="-Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -lc -lgcc"
+
+export SYSROOT
+
+all: sysroot/lib/libpango-1.0.a
+
+# iconv
+#  -isystem $(PLATFORM)/arch-arm/usr/include
+#  LDFLAGS="-Wl,-rpath-link=$(PLATFORM)/arch-arm/usr/lib -L$(PLATFORM)/arch-arm/usr/lib"
+libiconv/configure:
+	cd libiconv && PATH=$(CWD)/helper:$$PATH ./autogen.sh
+# trickiness: gnulib stdint.h header recursively #includes time.h twice
+# unless WCHAR_MIN and WCHAR_MAX are defined.  So do so!
+libiconv/config.h: libiconv/configure
+	cd libiconv && \
+	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC)" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS) STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar
+libiconv/lib/libiconv.la: libiconv/config.h
+	cd libiconv && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libiconv.a: libiconv/lib/libiconv.la
+	cd libiconv && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# gettext
+gettext/configure:
+	cd gettext && ./autogen.sh --quick
+# trickiness: force gl_cv_func_memchr_works=yes because memchr is used by
+#             strstr replacement, but gnulib doesn't include memchr as a
+#             dependency for strstr, and assumes it doesn't work
+#             when cross-compiling
+# also: pw_gecos is used in pwd.h ; use pw_name instead
+gettext/Makefile: gettext/configure sysroot/lib/libiconv.a
+	cd gettext && \
+	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --with-included-gettext --disable-java --disable-native-java --disable-threads --disable-libasprintf --without-emacs CC="$(HOSTCC)" CXX="$(HOSTCXX)-g++" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/gettext-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar gl_cv_func_memchr_works=yes
+# the man/html file generation tools don't quite work when cross compiling
+# the archive.dir.tar file isn't version controlled
+gettext/gettext-tools/libgettextpo/libgettextpo.la: gettext/Makefile
+	for f in envsubst.1 gettext.1 gettext.1.in gettext.1.html ngettext.1 ngettext.1.in ngettext.1.html ; do \
+	   touch gettext/gettext-runtime/man/$$f ; \
+	done
+	for f in msgcmp.1 msgfmt.1 msgmerge.1 msgunfmt.1 xgettext.1 msgattrib.1 msgcat.1 msgcomm.1 msgconv.1 msgen.1 msgexec.1 msgfilter.1 msggrep.1 msginit.1 msguniq.1 recode-sr-latin.1 gettextize.1 autopoint.1; do \
+	   touch gettext/gettext-tools/man/$$f ; \
+	done
+	touch gettext/gettext-tools/examples/hello-php/po/zh_TW.po
+	gzip -d -c < gettext-0.18.1.1-archive.dir.tar.gz > gettext/gettext-tools/misc/archive.dir.tar
+	cd gettext && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libgettextpo.a: gettext/gettext-tools/libgettextpo/libgettextpo.la
+	cd gettext && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# check stack direction
+# examination of the assembly source confirms that stack grows *down*
+stack.s: stack.c
+	PATH=$(TOOLCHAIN):$$PATH $(HOSTCC) -S $< -O9
+
+# configure glib
+# aptitude install gtk-doc-tools first if necessary
+glib/configure:
+	cd glib && NOCONFIGURE=1 ./autogen.sh
+# trickiness -- which way does the stack grow? down ('no')
+# does dlopen/dlsym use a leading underscore? ('no' - a guess based on stack.s)
+# we also hacked the glib/gatomic.c to disable G_ATOMIC_ARM, since we
+#  don't support the needed swp instruction in thumb mode,
+#  See https://bugzilla.gnome.org/show_bug.cgi?id=498810
+#  also: hack configure.ac to provide a fallback for qsort_r detection, 
+#   which didn't work when cross-compiling
+#  also -- replace pw_gecos with pw_name again, like for gettext
+# also cut out libasyncns in glib/gio/Makefile.am
+glib/config.h: glib/configure sysroot/lib/libgettextpo.a sysroot/lib/libiconv.a
+	cd glib && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --enable-gc-friendly --with-threads=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/glib-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include" glib_cv_stack_grows=no glib_cv_uscore=no glib_os_android=yes
+
+glib/glib/libglib-2.0.la: glib/config.h
+	cd glib && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libglib-2.0.a: glib/glib/libglib-2.0.la
+	cd glib && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure pixman
+# note that pixman doesn't honor NOCONFIGURE=1 (submit patch upstream?)
+# XXX: defined PIXMAN_NO_TLS; no thread-safety for pixman
+#      (but Bionic does in fact have thread-local storage)
+# XXX: is the dependency on libglib correct?
+pixman/configure:
+	#cd pixman && NOCONFIGURE=1 ./autogen.sh
+	cd pixman && autoreconf -v --install
+pixman/config.h: pixman/configure
+	cd pixman && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DPIXMAN_NO_TLS -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pixman-extra -I$(SYSROOT)/include -include pixman-elf-fix.h" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+pixman/pixman/libpixman-1.la: pixman/config.h
+	cd pixman && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libpixman-1.a: pixman/pixman/libpixman-1.la
+	cd pixman && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure freetype2
+# sketchy: need to #define uint64_t __uint64_t
+freetype2/builds/unix/configure:
+	-cd freetype2 && NOCONFIGURE=1 bash ./autogen.sh
+freetype2/config.mk: freetype2/builds/unix/configure
+	cd freetype2 && \
+	PATH=$(TOOLCHAIN):$$PATH make
+freetype2/objs/libfreetype.la: freetype2/config.mk
+	cd freetype2/builds/unix && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Duint64_t=__uint64_t -I$(CWD)/freetype2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	cd freetype2 && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libfreetype.a: freetype2/objs/libfreetype.la
+	cd freetype2 && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure cairo
+# XXX: we are disabling PNG support; that's too bad.
+# XXX: we are disabling SVG support; that's too bad.
+# XXX: really want to enable GL/EGL backend
+# XXX: no mutex implementation; CAIRO_NO_MUTEX defined
+cairo/configure:
+	cd cairo && NOCONFIGURE=1 ./autogen.sh
+cairo/config.h: cairo/configure \
+	sysroot/lib/libpixman-1.a sysroot/lib/libfreetype.a \
+	sysroot/lib/libglib-2.0.a sysroot/lib/libfontconfig.a
+	cd cairo && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --enable-png=no --enable-ps=no --enable-pdf=no --enable-svg=no --enable-xlib=no FREETYPE_CONFIG=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -DCAIRO_NO_MUTEX -I$(CWD)/cairo-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
+cairo/src/libcairo.la: cairo/config.h
+	cd cairo && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libcairo.a: cairo/src/libcairo.la
+	cd cairo && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure libxml2
+libxml2/configure libxml2/config.h:
+	cd libxml2 && ./autogen.sh && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --enable-rebuild-docs=no --without-ftp --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/libxml2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+libxml2/libxml2.la: libxml2/config.h
+	cd libxml2 && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libxml2.a: libxml2/libxml2.la
+	cd libxml2 && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure fontconfig (depends on libxml2)
+fontconfig/configure:
+	cd fontconfig && ./autogen.sh --noconfigure
+fontconfig/config.h: fontconfig/configure \
+	sysroot/lib/libxml2.a sysroot/lib/libfreetype.a
+	cd fontconfig && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --with-freetype-config=$(SYSROOT)/bin/freetype-config --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include -isystem $(SYSROOT)/include/freetype2" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/fontconfig-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+fontconfig/src/libfontconfig.la: fontconfig/config.h
+	cd fontconfig && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libfontconfig.a: fontconfig/src/libfontconfig.la
+	cd fontconfig && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+
+# configure pango
+# aptitude install gtk-doc-tools first if necessary
+pango/configure:
+	cd pango && NOCONFIGURE=1 ./autogen.sh
+pango/config.h: pango/configure \
+	sysroot/lib/libcairo.a sysroot/lib/libfontconfig.a \
+	sysroot/lib/libglib-2.0.a
+	cd pango && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --without-x --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pango-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
+pango/pango/libpango-1.0.la: pango/config.h
+	cd pango && \
+	PATH=$(TOOLCHAIN):$$PATH make V=1
+sysroot/lib/libpango-1.0.a: pango/pango/libpango-1.0.la
+	cd pango && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+
+clean:
+	-$(MAKE) -C libiconv distclean
+	-$(MAKE) -C gettext distclean
+	-$(MAKE) -C glib distclean
+	-$(MAKE) -C pango distclean
+	-$(MAKE) -C cairo distclean
+	-$(MAKE) -C freetype2 distclean
+	-$(MAKE) -C fontconfig distclean
+	-$(MAKE) -C libxml2 distclean
+	-$(MAKE) -C pixman distclean
+	$(RM) -f stack.s
+	$(RM) -f libiconv/configure \
+		glib/configure gettext/configure libiconv/configure \
+		pixman/configure pango/configure cairo/configure \
+		libxml2/configure fontconfig/configure \
+		freetype2/builds/unix/configure
+	$(RM) -f libiconv/config.h \
+		glib/config.h gettext/Makefile libiconv/config.h \
+		pixman/config.h pango/config.h cairo/config.h \
+		fontconfig/config.h libxml2/config.h \
+		freetype2/objs/ftmodule.h freetype2/builds/unix/unix-cc.mk \
+		freetype2/builds/config.mk
+	$(RM) -rf sysroot
+
+.PHONY: libiconv glib

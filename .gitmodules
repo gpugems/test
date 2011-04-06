@@ -4,3 +4,24 @@
 [submodule "jni/pixman"]
 	path = jni/pixman
 	url = git://git.cairographics.org/git/pixman.git
+[submodule "jni/pango"]
+	path = jni/pango
+	url = git://git.gnome.org/pango
+[submodule "jni/glib"]
+	path = jni/glib
+	url = git://git.gnome.org/glib
+[submodule "jni/libiconv"]
+	path = jni/libiconv
+	url = git://git.savannah.gnu.org/libiconv.git
+[submodule "jni/gettext"]
+	path = jni/gettext
+	url = git://git.savannah.gnu.org/gettext.git
+[submodule "jni/freetype2"]
+	path = jni/freetype2
+	url = git://git.sv.gnu.org/freetype/freetype2.git
+[submodule "jni/fontconfig"]
+	path = jni/fontconfig
+	url = http://cgit.freedesktop.org/fontconfig/
+[submodule "jni/libxml2"]
+	path = jni/libxml2
+	url = git://git.gnome.org/libxml2

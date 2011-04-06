@@ -1,0 +1,4 @@
+#!/bin/bash
+SYSROOT=$(dirname $0)/../sysroot
+PKG_CONFIG_LIBDIR=$SYSROOT/lib/pkgconfig  pkg-config "$@"
+
