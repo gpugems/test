@@ -12,6 +12,17 @@
 # XX build gtk-update-icon-cache? or don't define REBUILD_PNGS?
 # XX need pdf backend for cario?
 
+# current modules:
+# libiconv.a
+# libgettextpo.a
+# libglib-2.0.a
+# libpixman-1.a
+# libfreetype.a
+# libcairo.a
+# libxml2.a
+# libfontconfig.a
+# libpango-1.0.a
+
 # change this to point to your NDK
 NDK=$(HOME)/3rdParty/android-ndk-r5b
 TOOLCHAIN=$(NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin
@@ -22,10 +33,11 @@ SYSROOT=$(CWD)/sysroot
 HOST=arm-linux-androideabi
 # use -mfpu=vfp to disable NEON
 HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  -Wno-psabi -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack
-HOSTCC=$(HOST)-gcc $(HOSTCFLAGS) -fstack-protector
+HOSTCC=$(HOST)-gcc $(HOSTCFLAGS)
 # add harmless suffix to HOSTCXX definition to fix libtool breakage
 HOSTCXX=$(HOST)-g++ $(HOSTCFLAGS) -DFOOFOOFOO
 HOSTLDFLAGS="-Wl,--fix-cortex-a8  -Wl,--no-undefined -Wl,-z,noexecstack -lc -lgcc"
+FIXSHARED=--enable-static --enable-shared ac_cv_host=arm-linux-gnu
 
 export SYSROOT
 
@@ -40,7 +52,7 @@ libiconv/configure:
 # unless WCHAR_MIN and WCHAR_MAX are defined.  So do so!
 libiconv/config.h: libiconv/configure
 	cd libiconv && \
-	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC)" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS) STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar
+	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) CC="$(HOSTCC)" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS) STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar
 libiconv/lib/libiconv.la: libiconv/config.h
 	cd libiconv && \
 	PATH=$(TOOLCHAIN):$$PATH make
@@ -58,7 +70,7 @@ gettext/configure:
 # also: pw_gecos is used in pwd.h ; use pw_name instead
 gettext/Makefile: gettext/configure sysroot/lib/libiconv.a
 	cd gettext && \
-	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --with-included-gettext --disable-java --disable-native-java --disable-threads --disable-libasprintf --without-emacs CC="$(HOSTCC)" CXX="$(HOSTCXX)-g++" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/gettext-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar gl_cv_func_memchr_works=yes
+	PATH=$(TOOLCHAIN):$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) --with-included-gettext --disable-java --disable-native-java --disable-threads --disable-libasprintf --without-emacs CC="$(HOSTCC)" CXX="$(HOSTCXX)-g++" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/gettext-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar gl_cv_func_memchr_works=yes ac_cv_func_strnlen_working=yes
 # the man/html file generation tools don't quite work when cross compiling
 # the archive.dir.tar file isn't version controlled
 gettext/gettext-tools/libgettextpo/libgettextpo.la: gettext/Makefile
@@ -96,7 +108,7 @@ glib/configure:
 # also cut out libasyncns in glib/gio/Makefile.am
 glib/config.h: glib/configure sysroot/lib/libgettextpo.a sysroot/lib/libiconv.a
 	cd glib && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --enable-gc-friendly --with-threads=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/glib-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include" glib_cv_stack_grows=no glib_cv_uscore=no glib_os_android=yes
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) --enable-gc-friendly --with-threads=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Dpw_gecos=pw_name -I$(CWD)/glib-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include" glib_cv_stack_grows=no glib_cv_uscore=no glib_os_android=yes
 
 glib/glib/libglib-2.0.la: glib/config.h
 	cd glib && \
@@ -115,7 +127,7 @@ pixman/configure:
 	cd pixman && autoreconf -v --install
 pixman/config.h: pixman/configure
 	cd pixman && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DPIXMAN_NO_TLS -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pixman-extra -I$(SYSROOT)/include -include pixman-elf-fix.h" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DPIXMAN_NO_TLS -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pixman-extra -I$(SYSROOT)/include -include pixman-elf-fix.h" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
 pixman/pixman/libpixman-1.la: pixman/config.h
 	cd pixman && \
 	PATH=$(TOOLCHAIN):$$PATH make
@@ -132,7 +144,7 @@ freetype2/config.mk: freetype2/builds/unix/configure
 	PATH=$(TOOLCHAIN):$$PATH make
 freetype2/objs/libfreetype.la: freetype2/config.mk
 	cd freetype2/builds/unix && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Duint64_t=__uint64_t -I$(CWD)/freetype2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -Duint64_t=__uint64_t -I$(CWD)/freetype2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
 	cd freetype2 && \
 	PATH=$(TOOLCHAIN):$$PATH make
 sysroot/lib/libfreetype.a: freetype2/objs/libfreetype.la
@@ -150,7 +162,7 @@ cairo/config.h: cairo/configure \
 	sysroot/lib/libpixman-1.a sysroot/lib/libfreetype.a \
 	sysroot/lib/libglib-2.0.a sysroot/lib/libfontconfig.a
 	cd cairo && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --prefix=$(SYSROOT) --enable-png=no --enable-ps=no --enable-pdf=no --enable-svg=no --enable-xlib=no FREETYPE_CONFIG=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -DCAIRO_NO_MUTEX -I$(CWD)/cairo-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --prefix=$(SYSROOT) --enable-png=no --enable-ps=no --enable-pdf=no --enable-svg=no --enable-xlib=no FREETYPE_CONFIG=no CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -DCAIRO_NO_MUTEX -I$(CWD)/cairo-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
 cairo/src/libcairo.la: cairo/config.h
 	cd cairo && \
 	PATH=$(TOOLCHAIN):$$PATH make
@@ -159,9 +171,10 @@ sysroot/lib/libcairo.a: cairo/src/libcairo.la
 	PATH=$(TOOLCHAIN):$$PATH make install
 
 # configure libxml2
+# XXX threads disabled; link to -lpthread fails (need a stub)
 libxml2/configure libxml2/config.h:
 	cd libxml2 && ./autogen.sh && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --enable-rebuild-docs=no --without-ftp --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/libxml2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --without-python --without-threads --enable-rebuild-docs=no --without-ftp --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/libxml2-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
 libxml2/libxml2.la: libxml2/config.h
 	cd libxml2 && \
 	PATH=$(TOOLCHAIN):$$PATH make
@@ -175,14 +188,13 @@ fontconfig/configure:
 fontconfig/config.h: fontconfig/configure \
 	sysroot/lib/libxml2.a sysroot/lib/libfreetype.a
 	cd fontconfig && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --with-freetype-config=$(SYSROOT)/bin/freetype-config --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include -isystem $(SYSROOT)/include/freetype2" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/fontconfig-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --with-freetype-config=$(SYSROOT)/bin/freetype-config --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include -isystem $(SYSROOT)/include/freetype2" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/fontconfig-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
 fontconfig/src/libfontconfig.la: fontconfig/config.h
 	cd fontconfig && \
 	PATH=$(TOOLCHAIN):$$PATH make
 sysroot/lib/libfontconfig.a: fontconfig/src/libfontconfig.la
 	cd fontconfig && \
 	PATH=$(TOOLCHAIN):$$PATH make install
-
 
 # configure pango
 # aptitude install gtk-doc-tools first if necessary
@@ -192,7 +204,7 @@ pango/config.h: pango/configure \
 	sysroot/lib/libcairo.a sysroot/lib/libfontconfig.a \
 	sysroot/lib/libglib-2.0.a
 	cd pango && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi --without-x --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pango-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --without-x --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pango-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
 pango/pango/libpango-1.0.la: pango/config.h
 	cd pango && \
 	PATH=$(TOOLCHAIN):$$PATH make V=1
@@ -222,7 +234,18 @@ clean:
 		pixman/config.h pango/config.h cairo/config.h \
 		fontconfig/config.h libxml2/config.h \
 		freetype2/objs/ftmodule.h freetype2/builds/unix/unix-cc.mk \
-		freetype2/builds/config.mk
+		freetype2/builds/config.mk \
+		glib/m4macros/gtk-doc.m4
 	$(RM) -rf sysroot
+	echo More mop-up work
+	cd gettext && git clean -d -f
+	$(RM) -rf gettext/gnulib
+	cd freetype2 && git checkout builds/unix/install-sh
+	cd libiconv && git clean -d -f
+	$(RM) -rf libiconv/gnulib
+	cd libiconv && git checkout build-aux/reloc-ldflags
+	cd libxml2 && git clean -d -f
+	cd libxml2 && git checkout python/setup.py
+
 
 .PHONY: libiconv glib
