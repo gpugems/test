@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "cairo/src/cairo.h"
+#include "cairo/cairo.h"
 
 #define  LOG_TAG    "android-cairo-pure-ndk"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)

@@ -1,3 +1,5 @@
+export NDK_MODULE_PATH=../..
+
 all: config install
 
 config: local.properties build.xml
