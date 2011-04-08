@@ -18,6 +18,7 @@ package com.example.cairo;
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
