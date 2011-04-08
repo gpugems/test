@@ -31,8 +31,13 @@ CWD=$(shell pwd)
 SYSROOT=$(CWD)/sysroot
 # -isystem $(PLATFORM)/arch-arm/usr/include -L$(PLATFORM)/arch-arm/usr/lib -Wl,-rpath-link=$(PLATFORM)/arch-arm/usr/lib 
 HOST=arm-linux-androideabi
-# use -mfpu=vfp to disable NEON
-HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  -Wno-psabi -march=armv7-a -mfloat-abi=softfp -mfpu=neon -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack
+# XXX: ARMv7 isn't supported in QEMU at the moment.
+#      see http://groups.google.com/group/android-ndk/browse_thread/thread/a19fc6df3d661d79
+# XXX: also, I bet we should move the -D__ARM_ARCH_5__ etc into ARMV5 and use
+#      other similar definitions for ARMV7
+ARMV7=-march=armv7-a -mfloat-abi=softfp -mfpu=neon
+ARMV5=-mfpu=vfp
+HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  $(ARMV5) -Wno-psabi -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack
 HOSTCC=$(HOST)-gcc $(HOSTCFLAGS)
 # add harmless suffix to HOSTCXX definition to fix libtool breakage
 HOSTCXX=$(HOST)-g++ $(HOSTCFLAGS) -DFOOFOOFOO
