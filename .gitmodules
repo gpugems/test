@@ -25,3 +25,6 @@
 [submodule "jni/libxml2"]
 	path = jni/libxml2
 	url = git://git.gnome.org/libxml2
+[submodule "jni/atk"]
+	path = jni/atk
+	url = git://git.gnome.org/atk

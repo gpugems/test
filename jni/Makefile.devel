@@ -6,7 +6,6 @@
 
 # packages left:
 # gtk+-3 --disable-x11-backend --disable-win32-backend --disable-quartz-backend
-# atk
 # gdk-pixbuf
 # introspection
 # XX build gtk-update-icon-cache? or don't define REBUILD_PNGS?
@@ -46,7 +45,7 @@ FIXSHARED=--enable-static --enable-shared ac_cv_host=arm-linux-gnu
 
 export SYSROOT
 
-all: sysroot/lib/libpango-1.0.a
+all: sysroot/lib/libpango-1.0.a sysroot/lib/libatk-1.0.a
 
 # iconv
 #  -isystem $(PLATFORM)/arch-arm/usr/include
@@ -217,6 +216,21 @@ sysroot/lib/libpango-1.0.a: pango/pango/libpango-1.0.la
 	cd pango && \
 	PATH=$(TOOLCHAIN):$$PATH make install
 
+# configure atk (depends on libglib/libgobject, gettext)
+# XXX also on gobject-introspection
+atk/configure:
+	cd atk && NOCONFIGURE=1 ./autogen.sh
+atk/config.h: atk/configure \
+	sysroot/lib/libglib-2.0.a sysroot/lib/libgettextpo.a
+	cd atk && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --disable-glibtest --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/atk-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+atk/atk/libatk-1.0.la: atk/config.h
+	cd atk && \
+	PATH=$(TOOLCHAIN):$$PATH make V=1
+sysroot/lib/libatk-1.0.a: atk/atk/libatk-1.0.la
+	cd atk && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
 
 clean:
 	-$(MAKE) -C libiconv distclean
@@ -228,16 +242,17 @@ clean:
 	-$(MAKE) -C fontconfig distclean
 	-$(MAKE) -C libxml2 distclean
 	-$(MAKE) -C pixman distclean
+	-$(MAKE) -C atk distclean
 	$(RM) -f stack.s
 	$(RM) -f libiconv/configure \
 		glib/configure gettext/configure libiconv/configure \
 		pixman/configure pango/configure cairo/configure \
-		libxml2/configure fontconfig/configure \
+		libxml2/configure fontconfig/configure atk/configure \
 		freetype2/builds/unix/configure
 	$(RM) -f libiconv/config.h \
 		glib/config.h gettext/Makefile libiconv/config.h \
 		pixman/config.h pango/config.h cairo/config.h \
-		fontconfig/config.h libxml2/config.h \
+		fontconfig/config.h libxml2/config.h atk/config.h \
 		freetype2/objs/ftmodule.h freetype2/builds/unix/unix-cc.mk \
 		freetype2/builds/config.mk \
 		glib/m4macros/gtk-doc.m4

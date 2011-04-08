@@ -240,3 +240,16 @@ LOCAL_SRC_FILES := sysroot/lib/libpangoft2-1.0.so
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
 include $(PREBUILT_SHARED_LIBRARY)
 
+# static version of libatk (from atk)
+include $(CLEAR_VARS)
+LOCAL_MODULE := libatk_static
+LOCAL_SRC_FILES := sysroot/lib/libatk-1.0.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/atk-1.0
+include $(PREBUILT_STATIC_LIBRARY)
+# shared version of libatk
+include $(CLEAR_VARS)
+LOCAL_MODULE := libatk_shared
+LOCAL_SRC_FILES := sysroot/lib/libatk-1.0.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/atk-1.0
+include $(PREBUILT_SHARED_LIBRARY)
+
