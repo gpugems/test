@@ -37,7 +37,7 @@ HOST=arm-linux-androideabi
 #      other similar definitions for ARMV7
 ARMV7=-march=armv7-a -mfloat-abi=softfp -mfpu=neon
 ARMV5=-mfpu=vfp
-HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  $(ARMV5) -Wno-psabi -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack
+HOSTCFLAGS=--sysroot $(PLATFORM)/arch-arm -fpic -ffunction-sections -funwind-tables -D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__  $(ARMV5) -Wno-psabi -mthumb -Os -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -DANDROID -Wa,--noexecstack -g
 HOSTCC=$(HOST)-gcc $(HOSTCFLAGS)
 # add harmless suffix to HOSTCXX definition to fix libtool breakage
 HOSTCXX=$(HOST)-g++ $(HOSTCFLAGS) -DFOOFOOFOO
