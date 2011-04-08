@@ -37,13 +37,14 @@ public class Cairo extends Activity {
 class CairoView extends View {
     /* implementend by libjava-bitmap.so */
     private static native void drawFrame(Bitmap bitmap);
+    private static native void loadFonts();
 
     private Bitmap bmp;
 
     public CairoView(Context context) {
         super(context);
         bmp = Bitmap.createBitmap(10,10, Bitmap.Config.RGB_565);
-
+	loadFonts();
     }
 
     @Override protected void onDraw(Canvas canvas) {

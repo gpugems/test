@@ -193,7 +193,7 @@ fontconfig/configure:
 fontconfig/config.h: fontconfig/configure \
 	sysroot/lib/libxml2.a sysroot/lib/libfreetype.a
 	cd fontconfig && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --with-freetype-config=$(SYSROOT)/bin/freetype-config --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include -isystem $(SYSROOT)/include/freetype2" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/fontconfig-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --with-freetype-config=$(SYSROOT)/bin/freetype-config --with-default-fonts=/system/fonts --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include -isystem $(SYSROOT)/include/freetype2" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/fontconfig-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
 fontconfig/src/libfontconfig.la: fontconfig/config.h
 	cd fontconfig && \
 	PATH=$(TOOLCHAIN):$$PATH make
@@ -209,7 +209,7 @@ pango/config.h: pango/configure \
 	sysroot/lib/libcairo.a sysroot/lib/libfontconfig.a \
 	sysroot/lib/libglib-2.0.a
 	cd pango && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --without-x --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pango-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --without-x --with-included-modules=yes --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/pango-extra -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX="$(HOSTCXX)-g++ -isystem $(SYSROOT)/include"
 pango/pango/libpango-1.0.la: pango/config.h
 	cd pango && \
 	PATH=$(TOOLCHAIN):$$PATH make V=1

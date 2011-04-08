@@ -57,78 +57,80 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgio_static
 LOCAL_SRC_FILES := sysroot/lib/libgio-2.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libgio
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgio_shared
 LOCAL_SRC_FILES := sysroot/lib/libgio-2.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libglib (from glib)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libglib_static
 LOCAL_SRC_FILES := sysroot/lib/libglib-2.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0 \
+                           $(LOCAL_PATH)/sysroot/lib/glib-2.0/include
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libglib
 include $(CLEAR_VARS)
 LOCAL_MODULE := libglib_shared
 LOCAL_SRC_FILES := sysroot/lib/libglib-2.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0 \
+                           $(LOCAL_PATH)/sysroot/lib/glib-2.0/include
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libgmodule (from glib)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgmodule_static
 LOCAL_SRC_FILES := sysroot/lib/libgmodule-2.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libgmodule
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgmodule_shared
 LOCAL_SRC_FILES := sysroot/lib/libgmodule-2.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libgobject (from glib)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgobject_static
 LOCAL_SRC_FILES := sysroot/lib/libgobject-2.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libgobject
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgobject_shared
 LOCAL_SRC_FILES := sysroot/lib/libgobject-2.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libgthread (from glib)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgthread_static
 LOCAL_SRC_FILES := sysroot/lib/libgthread-2.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libgthread
 include $(CLEAR_VARS)
 LOCAL_MODULE := libgthread_shared
 LOCAL_SRC_FILES := sysroot/lib/libgthread-2.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/glib-2.0
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libpixman (from pixman)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpixman_static
 LOCAL_SRC_FILES := sysroot/lib/libpixman-1.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pixman-1
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libpixman
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpixman_shared
 LOCAL_SRC_FILES := sysroot/lib/libpixman-1.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pixman-1
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libfreetype (from freetype)
@@ -148,26 +150,26 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libxml2_static
 LOCAL_SRC_FILES := sysroot/lib/libxml2.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/libxml2
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libxml2
 include $(CLEAR_VARS)
 LOCAL_MODULE := libxml2_shared
 LOCAL_SRC_FILES := sysroot/lib/libxml2.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/libxml2
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libfontconfig (from fontconfig)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libfontconfig_static
 LOCAL_SRC_FILES := sysroot/lib/libfontconfig.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/fontconfig
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libfontconfig
 include $(CLEAR_VARS)
 LOCAL_MODULE := libfontconfig_shared
 LOCAL_SRC_FILES := sysroot/lib/libfontconfig.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/fontconfig
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libcairo (from cairo)
@@ -201,26 +203,28 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpango_static
 LOCAL_SRC_FILES := sysroot/lib/libpango-1.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pango-1.0/
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libpango
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpango_shared
 LOCAL_SRC_FILES := sysroot/lib/libpango-1.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pango-1.0/
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libpangocairo (from pango)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpangocairo_static
 LOCAL_SRC_FILES := sysroot/lib/libpangocairo-1.0.a
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pango-1.0 \
+	                   $(LOCAL_PATH)/sysroot/include/cairo
 include $(PREBUILT_STATIC_LIBRARY)
 # shared version of libpangocairo
 include $(CLEAR_VARS)
 LOCAL_MODULE := libpangocairo_shared
 LOCAL_SRC_FILES := sysroot/lib/libpangocairo-1.0.so
-LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/pango-1.0 \
+	                   $(LOCAL_PATH)/sysroot/include/cairo
 include $(PREBUILT_SHARED_LIBRARY)
 
 # static version of libpangoft2 (from pango)
