@@ -216,7 +216,7 @@ static void draw_frame(AndroidBitmapInfo *info, void *pixels) {
     cairo_restore(cr);
 
     /* draw simple text directly w/ Cairo/FreeType */
-    cairo_select_font_face (cr, "Droid Sans", CAIRO_FONT_SLANT_NORMAL,
+    cairo_select_font_face (cr, "Droid Sans Fallback", CAIRO_FONT_SLANT_NORMAL,
 			    CAIRO_FONT_WEIGHT_BOLD);
     cairo_set_font_size (cr, 0.3);
     cairo_move_to (cr, 0.1, 0.5);
