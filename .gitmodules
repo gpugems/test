@@ -1,36 +1,48 @@
 [submodule "jni/cairo"]
 	path = jni/cairo
-	url = git://git.cairographics.org/git/cairo
+#	url = git://git.cairographics.org/git/cairo
+        url = git://dev.laptop.org/users/cscott/android-cairo
 [submodule "jni/pixman"]
 	path = jni/pixman
-	url = git://git.cairographics.org/git/pixman.git
+#	url = git://git.cairographics.org/git/pixman.git
+        url = git://dev.laptop.org/users/cscott/android-pixman
 [submodule "jni/pango"]
 	path = jni/pango
-	url = git://git.gnome.org/pango
+#	url = git://git.gnome.org/pango
+        url = git://dev.laptop.org/users/cscott/android-pango
 [submodule "jni/glib"]
 	path = jni/glib
-	url = git://git.gnome.org/glib
+#	url = git://git.gnome.org/glib
+        url = git://dev.laptop.org/users/cscott/android-glib
 [submodule "jni/libiconv"]
 	path = jni/libiconv
-	url = git://git.savannah.gnu.org/libiconv.git
+#	url = git://git.savannah.gnu.org/libiconv.git
+        url = git://dev.laptop.org/users/cscott/android-libiconv
 [submodule "jni/gettext"]
 	path = jni/gettext
-	url = git://git.savannah.gnu.org/gettext.git
+#	url = git://git.savannah.gnu.org/gettext.git
+        url = git://dev.laptop.org/users/cscott/android-gettext
 [submodule "jni/freetype2"]
 	path = jni/freetype2
-	url = git://git.sv.gnu.org/freetype/freetype2.git
+#	url = git://git.sv.gnu.org/freetype/freetype2.git
+        url = git://dev.laptop.org/users/cscott/android-freetype2
 [submodule "jni/fontconfig"]
 	path = jni/fontconfig
-	url = http://cgit.freedesktop.org/fontconfig/
+#	url = http://cgit.freedesktop.org/fontconfig/
+        url = git://dev.laptop.org/users/cscott/android-fontconfig
 [submodule "jni/libxml2"]
 	path = jni/libxml2
-	url = git://git.gnome.org/libxml2
+#	url = git://git.gnome.org/libxml2
+        url = git://dev.laptop.org/users/cscott/android-libxml2
 [submodule "jni/atk"]
 	path = jni/atk
-	url = git://git.gnome.org/atk
+#	url = git://git.gnome.org/atk
+        url = git://dev.laptop.org/users/cscott/android-atk
 [submodule "jni/gobject-introspection"]
 	path = jni/gobject-introspection
-	url = git://git.gnome.org/gobject-introspection
+#	url = git://git.gnome.org/gobject-introspection
+        url = git://dev.laptop.org/users/cscott/android-gobject-introspection
 [submodule "jni/libffi"]
 	path = jni/libffi
-	url = git://github.com/atgreen/libffi.git
+#	url = git://github.com/atgreen/libffi.git
+        url = git://dev.laptop.org/users/cscott/android-libffi
