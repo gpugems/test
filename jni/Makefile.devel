@@ -45,7 +45,7 @@ FIXSHARED=--enable-static --enable-shared ac_cv_host=arm-linux-gnu
 
 export SYSROOT
 
-all: sysroot/lib/libpango-1.0.a sysroot/lib/libatk-1.0.a
+all: sysroot/lib/libpango-1.0.a sysroot/lib/libatk-1.0.a sysroot/lib/libffi.a
 
 # iconv
 #  -isystem $(PLATFORM)/arch-arm/usr/include
@@ -216,14 +216,46 @@ sysroot/lib/libpango-1.0.a: pango/pango/libpango-1.0.la
 	cd pango && \
 	PATH=$(TOOLCHAIN):$$PATH make install
 
-# configure atk (depends on libglib/libgobject, gettext)
-# XXX also on gobject-introspection
+# configure ffi
+# configure is in the repo, whee
+libffi/arm-linux-gnu/fficonfig.h:
+	cd libffi && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --with-sysroot=yes --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/libffi-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++ MANIFEST_TOOL=$(HOST)-mt
+libffi/arm-linux-gnu/libffi.la: libffi/arm-linux-gnu/fficonfig.h
+	cd libffi && \
+	PATH=$(TOOLCHAIN):$$PATH make
+sysroot/lib/libffi.a: libffi/arm-linux-gnu/libffi.la
+	cd libffi && \
+	PATH=$(TOOLCHAIN):$$PATH make install
+
+# configure gobject-introspection (depends on glib, ffi)
+# XXX disabled g-i-scanner, which requires python development headers
+# XXX needs better cross-compilation work, and in the introspection.m4
+#     file which is included in other libraries
+gobject-introspection/configure:
+	cd gobject-introspection && NOCONFIGURE=1 ./autogen.sh
+gobject-introspection/config.h: gobject-introspection/configure \
+	sysroot/lib/libglib-2.0.a sysroot/lib/libgettextpo.a \
+	sysroot/lib/libffi.a
+	cd gobject-introspection && \
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --disable-tests --with-glib-src=../glib --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/gobject-introspection-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+gobject-introspection/libgirepository-1.0.la: gobject-introspection/config.h
+	cd gobject-introspection && \
+	PATH=$(TOOLCHAIN):$$PATH make V=1
+sysroot/lib/libgirepository-1.0.a: gobject-introspection/libgirepository-1.0.la
+	cd gobject-introspection && \
+	PATH=$(TOOLCHAIN):$$PATH make install V=1
+
+# configure atk (depends on libglib/libgobject, gettext, gobject-introspection)
+# apt-get install gobject-introspection for host-side scanner
+# XXX gir dependency disabled
 atk/configure:
 	cd atk && NOCONFIGURE=1 ./autogen.sh
 atk/config.h: atk/configure \
 	sysroot/lib/libglib-2.0.a sysroot/lib/libgettextpo.a
+#	sysroot/lib/libgirepository-1.0.a # XXX
 	cd atk && \
-	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --disable-glibtest --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/atk-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++
+	PATH=$(TOOLCHAIN):$(CWD)/helper:$$PATH ./configure --build=i686-pc-linux-gnu --host=arm-linux-eabi $(FIXSHARED) --disable-glibtest --prefix=$(SYSROOT) CC="$(HOSTCC) -isystem $(SYSROOT)/include" CFLAGS="-nostdlib -DWCHAR_MIN=INT_MIN -DWCHAR_MAX=INT_MAX -I$(CWD)/atk-extra/src -I$(SYSROOT)/include" LD=$(HOST)-ld LDFLAGS=$(HOSTLDFLAGS)" -L$(SYSROOT)/lib" STRIP=$(HOST)-strip RANLIB=$(HOST)-ranlib AR=$(HOST)-ar NM=$(HOST)-nm OBJDUMP=$(HOST)-objdump CXX=$(HOST)-g++ INTROSPECTION_SCANNER=g-ir-scanner
 atk/atk/libatk-1.0.la: atk/config.h
 	cd atk && \
 	PATH=$(TOOLCHAIN):$$PATH make V=1
@@ -242,12 +274,16 @@ clean:
 	-$(MAKE) -C fontconfig distclean
 	-$(MAKE) -C libxml2 distclean
 	-$(MAKE) -C pixman distclean
+	-$(MAKE) -C libffi distclean
+	-$(MAKE) -C gobject-introspection distclean
 	-$(MAKE) -C atk distclean
 	$(RM) -f stack.s
 	$(RM) -f libiconv/configure \
 		glib/configure gettext/configure libiconv/configure \
 		pixman/configure pango/configure cairo/configure \
 		libxml2/configure fontconfig/configure atk/configure \
+		gobject-introspection/configure \
+		gobject-introspection/Makefile.in \
 		freetype2/builds/unix/configure
 	$(RM) -f libiconv/config.h \
 		glib/config.h gettext/Makefile libiconv/config.h \
@@ -255,11 +291,18 @@ clean:
 		fontconfig/config.h libxml2/config.h atk/config.h \
 		freetype2/objs/ftmodule.h freetype2/builds/unix/unix-cc.mk \
 		freetype2/builds/config.mk \
+		libffi/arm-linux-gnu/fficonfig.h \
+		gobject-introspection/config.h \
 		glib/m4macros/gtk-doc.m4
 	$(RM) -rf sysroot
 	echo More mop-up work
 	cd gettext && git clean -d -f
-	$(RM) -rf gettext/gnulib
+	$(RM) -rf gettext/gnulib \
+	          gettext/gettext-tools/gnulib-lib/*.[ch] \
+		  gettext/gettext-tools/gnulib-tests/*.[ch] \
+		  gettext/gettext-tools/libgrep/mbtowc-impl.h \
+		  gettext/gettext-tools/libgrep/mbtowc.c \
+		  gettext/gettext-tools/libgrep/wctype.in.h
 	cd freetype2 && git checkout builds/unix/install-sh
 	cd libiconv && git clean -d -f
 	$(RM) -rf libiconv/gnulib

@@ -28,3 +28,9 @@
 [submodule "jni/atk"]
 	path = jni/atk
 	url = git://git.gnome.org/atk
+[submodule "jni/gobject-introspection"]
+	path = jni/gobject-introspection
+	url = git://git.gnome.org/gobject-introspection
+[submodule "jni/libffi"]
+	path = jni/libffi
+	url = git://github.com/atgreen/libffi.git

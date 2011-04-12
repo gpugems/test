@@ -240,6 +240,32 @@ LOCAL_SRC_FILES := sysroot/lib/libpangoft2-1.0.so
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include
 include $(PREBUILT_SHARED_LIBRARY)
 
+# static version of libffi (from libffi)
+include $(CLEAR_VARS)
+LOCAL_MODULE := libffi_static
+LOCAL_SRC_FILES := sysroot/lib/libffi.a
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/lib/libffi-3.0.10rc9/include
+include $(PREBUILT_STATIC_LIBRARY)
+# shared version of libffi
+include $(CLEAR_VARS)
+LOCAL_MODULE := libffi_shared
+LOCAL_SRC_FILES := sysroot/lib/libffi.so
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/lib/libffi-3.0.10rc9/include
+include $(PREBUILT_SHARED_LIBRARY)
+
+## static version of libgirepository (from gobject-introspection)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := libgirepository_static
+#LOCAL_SRC_FILES := sysroot/lib/libgirepository-1.0.a
+#LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/gobject-introspection-1.0
+#include $(PREBUILT_STATIC_LIBRARY)
+## shared version of libgirepository
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := libgirepository_shared
+#LOCAL_SRC_FILES := sysroot/lib/libgirepository-1.0.so
+#LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/sysroot/include/gobject-introspection-1.0
+#include $(PREBUILT_SHARED_LIBRARY)
+
 # static version of libatk (from atk)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libatk_static
